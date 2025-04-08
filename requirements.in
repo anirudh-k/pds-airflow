@@ -1,0 +1,12 @@
+# Astro Runtime includes the following pre-installed providers packages: https://docs.astronomer.io/astro/runtime-image-architecture#provider-packages
+duckdb
+tabulate
+nba_api
+pyarrow
+google-cloud-storage
+
+# Development dependencies
+black
+flake8
+pre-commit
+pip-tools 
