@@ -1,16 +1,20 @@
+"""Custom functions for working with galaxy data in the ETL pipeline."""
+
 import pandas as pd
 
 
 def get_galaxy_data(num_galaxies: int = 20) -> pd.DataFrame:
-    """
-    Get data about up to 20 galaxies. This function mocks an API call.
+    """Get data about up to 20 galaxies.
+
+    This function mocks an API call.
+
     Args:
         num_galaxies: number of galaxies requested (default:20)
     """
-
     if num_galaxies > 20:
         print(
-            "The maximum number galaxies for which data can be returned is 20. Returning data for 20 galaxies."
+            """The maximum number galaxies for which data can be returned is 20.
+             Returning data for 20 galaxies."""
         )
 
     # hardcoded data for the example
@@ -153,7 +157,8 @@ def get_galaxy_data(num_galaxies: int = 20) -> pd.DataFrame:
             "distance_from_milkyway": 2540000,
             "distance_from_solarsystem": 2540000,
             "type_of_galaxy": "Spiral",
-            "characteristics": "predicted to collide with Milky Way in 4.5 billion years",
+            "characteristics": """predicted to collide with Milky Way
+              in 4.5 billion years""",
         },
     ]
 

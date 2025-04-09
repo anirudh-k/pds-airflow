@@ -4,17 +4,33 @@ from airflow.models.dag import DAG
 from airflow.hooks.base import BaseHook
 from airflow.models import Variable
 from airflow.decorators import task
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Dict, Any
 
-with DAG("example_secrets_dag", start_date=datetime(2022, 1, 1), schedule=None):
 
-    @task
-    def print_var():
-        """Print an Airflow variable from secrets backend."""
-        my_var = Variable.get("gcp-project-id")
-        print(f"My secret variable is: {my_var}")
+@task
+def get_secrets() -> Dict[str, Any]:
+    """Get secrets from Airflow."""
+    conn = BaseHook.get_connection("gcp_standard")
+    var = Variable.get("example_var")
 
-        conn = BaseHook.get_connection(conn_id="gcp_standard")
-        print(f"My secret connection is: {conn.get_uri()}")
+    return {"connection": conn.extra, "variable": var}
 
-    print_var()
+
+with DAG(
+    "example_secrets",
+    default_args={
+        "owner": "airflow",
+        "depends_on_past": False,
+        "email_on_failure": False,
+        "email_on_retry": False,
+        "retries": 1,
+        "retry_delay": timedelta(minutes=5),
+    },
+    description="Example DAG showing how to use Airflow secrets",
+    schedule_interval=timedelta(days=1),
+    start_date=datetime(2024, 4, 8),
+    catchup=False,
+    tags=["example"],
+) as dag:
+    get_secrets()
