@@ -14,7 +14,7 @@ from airflow.decorators import (
 from airflow.models.dataset import Dataset
 from airflow.models.baseoperator import chain
 from airflow.models.param import Param
-from pendulum import datetime, duration, timedelta
+from pendulum import datetime, duration
 from tabulate import tabulate
 import pandas as pd
 import duckdb
@@ -25,10 +25,6 @@ from typing import Dict, Any, List, Union, cast
 # modularize code by importing functions from the include folder
 from include.custom_functions.galaxy_functions import (
     get_galaxy_data,
-    get_connection,
-    calculate_galaxy_properties,
-    format_galaxy_data,
-    create_galaxy_table_in_duckdb,
 )
 
 # use the Airflow task logger to log information to the task logs (or use print())
@@ -62,7 +58,7 @@ galaxy_properties = Dataset("file://include/data/galaxy_properties.json")
         "retry_delay": duration(seconds=30),  # tasks wait 30s in between retries
     },
     description="Example ETL DAG for working with galaxy data",
-    schedule=timedelta(days=1),
+    schedule=duration(days=1),
     start_date=datetime(2024, 4, 8),
     catchup=False,
     tags=["example", "etl", "galaxies"],
@@ -82,14 +78,11 @@ def galaxy_etl() -> None:
     @task(outlets=[galaxy_data])
     def extract_galaxy_data(num_galaxies: Union[str, int]) -> List[Dict[str, Any]]:
         """Extract galaxy data from the SQLite database."""
-        # Get connection
-        conn = get_connection()
+        # Get data directly without connection
+        galaxies_df = get_galaxy_data(int(num_galaxies))
 
-        # Get data
-        galaxies = get_galaxy_data(conn, int(num_galaxies))
-
-        # Close connection
-        conn.close()
+        # Convert DataFrame to list of dictionaries
+        galaxies = galaxies_df.to_dict("records")
 
         return galaxies
 
@@ -99,20 +92,31 @@ def galaxy_etl() -> None:
         # Calculate properties for each galaxy
         galaxies_with_properties = []
         for galaxy in galaxies:
-            properties = calculate_galaxy_properties(galaxy)
-            formatted_galaxy = format_galaxy_data(properties)
-            galaxies_with_properties.append(formatted_galaxy)
+            # Add a simple property: is_close (within 500,000 light years)
+            galaxy["is_close"] = galaxy["distance_from_milkyway"] < 500000
+            galaxies_with_properties.append(galaxy)
 
         return galaxies_with_properties
 
     @task
     def load_galaxy_data(galaxies: List[Dict[str, Any]]) -> None:
         """Load galaxy data into DuckDB."""
-        # Create table if it doesn't exist
-        create_galaxy_table_in_duckdb()
-
         # Connect to DuckDB
         con = duckdb.connect(database=":memory:", read_only=False)
+
+        # Create table if it doesn't exist
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS galaxies (
+                name VARCHAR,
+                distance_from_milkyway INTEGER,
+                distance_from_solarsystem INTEGER,
+                type_of_galaxy VARCHAR,
+                characteristics VARCHAR,
+                is_close BOOLEAN
+            )
+        """
+        )
 
         # Convert to DataFrame and register it with DuckDB
         galaxies_df = pd.DataFrame(galaxies)
