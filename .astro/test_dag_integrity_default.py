@@ -113,23 +113,20 @@ def get_import_errors():
 
         def strip_path_prefix(path):
             """Remove the AIRFLOW_HOME prefix from a path."""
-            airflow_home = os.environ.get("AIRFLOW_HOME")
-            return os.path.relpath(path, airflow_home)
+            return os.path.relpath(path, os.environ.get("AIRFLOW_HOME"))
 
         # Initialize an empty list to store the tuples
         result = []
 
         # Iterate over the items in import_errors
         for k, v in dag_bag.import_errors.items():
-            path = strip_path_prefix(k)
-            result.append((path, v.strip()))
+            result.append((strip_path_prefix(k), v.strip()))
 
         # Check if there are DAGs without errors
         for file_path in dag_bag.dags:
             # Check if the file_path is not in import_errors
             if file_path not in dag_bag.import_errors:
-                path = strip_path_prefix(file_path)
-                result.append((path, "No import errors"))
+                result.append((strip_path_prefix(file_path), "No import errors"))
 
         return result
 
