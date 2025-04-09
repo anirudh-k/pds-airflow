@@ -1,8 +1,7 @@
-"""Example DAGs test.
+"""Test DAG validation.
 
 This test ensures that all Dags have tags, retries set to two, and no import errors.
-This is an example pytest and may not be fit for the context of your DAGs.
-Feel free to add and remove tests.
+Feel free to add, remove, or modify tests.
 """
 
 import os
